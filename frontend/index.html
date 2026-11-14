@@ -406,7 +406,56 @@ nav{background:var(--white);border-bottom:1.5px solid var(--border);position:sti
   .logo{font-size:19px}
   .hamburger-btn{width:36px;height:36px}
 }
+/* Mobile layout fixes */
+@media (max-width: 600px) {
+  html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
 
+  nav {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .logo {
+    font-size: 17px;
+    white-space: nowrap;
+  }
+
+  .hero {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 35px 14px;
+    overflow: hidden;
+  }
+
+  .hero h1 {
+    font-size: clamp(30px, 8vw, 40px);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .hero p {
+    font-size: 14px;
+  }
+
+  .search-box {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .search-box input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  img {
+    max-width: 100%;
+  }
+}
 /* ── HAMBURGER & OFF-CANVAS DRAWER ── */
 .nav-left-brand{display:flex;align-items:center;gap:14px}
 .hamburger-btn{width:40px;height:40px;border-radius:10px;background:#fff;border:1.5px solid var(--border);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4.5px;cursor:pointer;transition:all .2s;padding:0;flex-shrink:0}
@@ -1192,7 +1241,7 @@ nav{background:var(--white);border-bottom:1.5px solid var(--border);position:sti
 // ═══════════════════════════════════════════════════════════════
 // CONFIG & STATE
 // ═══════════════════════════════════════════════════════════════
-const API = 'http://localhost:5000/api/v1';
+const API = 'http://localhost:5000/api';
 
 let AUTH = {
   token: localStorage.getItem('mc_token') || null,
@@ -1701,7 +1750,7 @@ async function fetchAutocomplete(q) {
 
   try {
     const endpoint = APP_MODE === 'medicines'
-      ? `/medicines/search?q=${encodeURIComponent(q)}&limit=8`
+      ? `/medicines?search=${encodeURIComponent(q)}&limit=8`
       : `/lab-tests/search?q=${encodeURIComponent(q)}&limit=8`;
     const data = await apiFetch(endpoint);
     if (data.data?.length) items = data.data;
@@ -1772,7 +1821,7 @@ async function doSearch() {
       }
 
       try {
-        const data = await apiFetch(`/medicines/search?q=${encodeURIComponent(q)}&limit=1`);
+        const data = await apiFetch(`/medicines/search=${encodeURIComponent(q)}&limit=1`);
         if (data.data?.length) foundSlug = data.data[0].slug;
       } catch(_) {}
 
@@ -1816,8 +1865,9 @@ async function loadCompareMedicine(slug, sort='price', instock=false, express=fa
   try {
     const data = await apiFetch(url);
     document.getElementById('apiError').classList.remove('show');
-    const med = data.medicine;
-    currentStores = data.stores;
+    const med = data.data.medicine;
+    currentStores = data.data.stores;
+    
 
     document.getElementById('medIcon').textContent = med.icon || '💊';
     document.getElementById('medName').textContent = med.name;
@@ -1828,14 +1878,14 @@ async function loadCompareMedicine(slug, sort='price', instock=false, express=fa
       <span class="tag tag-pack">${med.packSize}</span>
     `;
 
-    const best = data.stores.find(s => s.isBest) || data.stores[0];
+    const best = currentStores.find(s => s.isBest) || currentStores[0];
     if (best) {
       document.getElementById('bestPrice').textContent = '₹' + best.price.toFixed(2);
       document.getElementById('bestStore').textContent = 'at ' + (best.storeName || best.storeId?.name || '');
       document.getElementById('saveBadge').textContent = '💰 Save ₹' + (med.mrp - best.price).toFixed(2) + ' vs MRP';
     }
 
-    renderMedicineRows(data.stores, med.name);
+    renderMedicineRows(currentStores, med.name);
   } catch(e) {
     showFallbackMedicine(slug);
   }
@@ -1960,11 +2010,11 @@ async function loadCompareLabTest(slug, sort='price', homeOnly=false, nablOnly=f
   try {
     const data = await apiFetch(url);
     document.getElementById('apiError').classList.remove('show');
-    currentTestObj = data.test;
-    currentHospitals = data.hospitals;
+    currentTestObj = data.data.test;
+    currentHospitals = data.data.hospitals;
 
-    renderLabTestHeader(data.test, data.hospitals);
-    renderHospitalCards(data.hospitals, data.test);
+    renderLabTestHeader(data.data.test, data.data.hospitals);
+    renderHospitalCards(data.data.hospitals, data.data.test);
   } catch(e) {
     currentTestObj = FALLBACK_LAB.test;
     currentHospitals = FALLBACK_LAB.hospitals;
